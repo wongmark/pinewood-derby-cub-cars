@@ -9,33 +9,102 @@ import { QRCodeSVG } from 'qrcode.react'
 
 function generateRaceId() { return Math.random().toString(36).slice(2, 8) }
 
+// Build a heat schedule that:
+//   1. Gives each car exactly `runsPerCar` races (the primary contract).
+//   2. Spreads each car's runs across the available lanes as evenly as
+//      possible (lane fairness — verifiable in the .xlsx export).
+//   3. Minimizes how often the same pairs of cars race together
+//      (opponent diversity).
+//
+// Strategy: greedy with cascading tiebreakers. For each lane of each
+// heat, pick the car with (fewest remaining runs left to assign,
+// fewest prior runs in this lane, fewest prior heats with the cars
+// already in this heat, smallest original order). The first criterion
+// guarantees the per-car contract; the others smooth out fairness.
 function buildSchedule(cars, runsPerCar, numLanes) {
   const n = cars.length
-  if (n < 2) return []
-  const schedule = []
+  if (n < 2 || runsPerCar < 1 || numLanes < 1) return []
+
+  // Per-car: runs remaining, lane usage histogram, and per-opponent
+  // co-race count. Initialized from the canonical car list so we don't
+  // bake in original order as a deciding factor — it only breaks ties.
+  const runsLeft = {}
   const laneCounts = {}
-  cars.forEach(c => { laneCounts[c.id] = Array(numLanes).fill(0) })
+  const coRaceCount = {}
+  const orderIndex = {}
+  cars.forEach((c, i) => {
+    runsLeft[c.id] = runsPerCar
+    laneCounts[c.id] = Array(numLanes).fill(0)
+    coRaceCount[c.id] = {}
+    orderIndex[c.id] = i
+  })
 
-  const totalHeats = Math.ceil((n * runsPerCar) / numLanes)
+  // Total car-runs to assign. We'll keep building heats until they're all
+  // placed — `ceil((n*r)/lanes)` is the minimum heat count assuming every
+  // heat is full, which it is whenever `n >= lanes`.
+  const totalCarRuns = n * runsPerCar
+  let placed = 0
+  const schedule = []
+  const heatCap = totalCarRuns + n  // hard upper bound to prevent infinite loop on degenerate inputs
 
-  for (let h = 0; h < totalHeats; h++) {
-    const sorted = [...cars].sort((a, b) => {
-      const aRuns = laneCounts[a.id].reduce((s, x) => s + x, 0)
-      const bRuns = laneCounts[b.id].reduce((s, x) => s + x, 0)
-      return aRuns - bRuns
-    })
+  while (placed < totalCarRuns && schedule.length < heatCap) {
     const heat = []
-    const used = new Set()
-    for (let lane = 0; lane < numLanes && sorted.length > 0; lane++) {
-      const candidate = sorted.find(c => !used.has(c.id) &&
-        laneCounts[c.id].reduce((s, x) => s + x, 0) < runsPerCar)
-      if (!candidate) break
-      used.add(candidate.id)
-      heat.push({ carId: candidate.id, lane })
-      laneCounts[candidate.id][lane]++
+    const usedInHeat = new Set()
+    const heatCarIds = []  // carIds chosen so far in this heat (for opponent-diversity scoring)
+
+    // Rotate which lane we fill first each heat. Critical when n < numLanes:
+    // without rotation, lanes >= n are never used and the same n cars cycle
+    // through lanes 0..n-1 in fixed order. With rotation, every lane gets
+    // its turn over numLanes heats.
+    const heatIdx = schedule.length
+    const laneOrder = Array.from({ length: numLanes }, (_, i) => (i + heatIdx) % numLanes)
+
+    for (const lane of laneOrder) {
+      // Eligible: cars not already in this heat and with runs remaining.
+      const eligible = cars.filter(c => !usedInHeat.has(c.id) && runsLeft[c.id] > 0)
+      if (eligible.length === 0) break
+
+      // Score each eligible car. Lower score wins.
+      // Priority order is encoded by weighting: each tier dominates the next.
+      // We pack the criteria into a single comparator instead of weights to
+      // avoid hidden ordering bugs from arithmetic collisions.
+      eligible.sort((a, b) => {
+        // 1. Most runs remaining first (so every car gets its full quota).
+        if (runsLeft[b.id] !== runsLeft[a.id]) return runsLeft[b.id] - runsLeft[a.id]
+        // 2. Least times in *this* lane.
+        const aLane = laneCounts[a.id][lane]
+        const bLane = laneCounts[b.id][lane]
+        if (aLane !== bLane) return aLane - bLane
+        // 3. Fewest prior heats with cars already in this heat.
+        const aOverlap = heatCarIds.reduce((s, id) => s + (coRaceCount[a.id][id] || 0), 0)
+        const bOverlap = heatCarIds.reduce((s, id) => s + (coRaceCount[b.id][id] || 0), 0)
+        if (aOverlap !== bOverlap) return aOverlap - bOverlap
+        // 4. Least-loaded lane overall for this car (helps with later passes).
+        const aMax = Math.max(...laneCounts[a.id])
+        const bMax = Math.max(...laneCounts[b.id])
+        if (aMax !== bMax) return aMax - bMax
+        // 5. Deterministic tiebreak: original car order.
+        return orderIndex[a.id] - orderIndex[b.id]
+      })
+
+      const pick = eligible[0]
+      usedInHeat.add(pick.id)
+      heat.push({ carId: pick.id, lane })
+      laneCounts[pick.id][lane]++
+      runsLeft[pick.id]--
+      placed++
+      // Update co-race counts for everyone already in this heat.
+      heatCarIds.forEach(id => {
+        coRaceCount[pick.id][id] = (coRaceCount[pick.id][id] || 0) + 1
+        coRaceCount[id][pick.id] = (coRaceCount[id][pick.id] || 0) + 1
+      })
+      heatCarIds.push(pick.id)
     }
-    if (heat.length > 0) schedule.push(heat)
+
+    if (heat.length === 0) break  // no eligible cars at all (shouldn't happen if placed < totalCarRuns)
+    schedule.push(heat)
   }
+
   return schedule
 }
 
@@ -1756,6 +1825,19 @@ export default function DerbyApp() {
                   )
                 })()}
               </div>
+              {runsPerCar > 0 && numLanes > 0 && runsPerCar < numLanes && (
+                <div style={{
+                  marginTop: 12, padding: '10px 12px',
+                  background: 'rgba(253,185,19,0.12)',
+                  border: `1px solid ${C.gold}`, borderRadius: 2,
+                  fontSize: 12, color: C.ink, lineHeight: 1.45,
+                  fontFamily: '"Inter", system-ui, sans-serif',
+                }}>
+                  <strong style={{ color: C.navy }}>💡 Tip:</strong> With {numLanes} lane{numLanes === 1 ? '' : 's'},
+                  running each car at least <strong>{numLanes} times</strong> lets every car race in every lane,
+                  which is the fairest setup. {runsPerCar < numLanes ? `You're set to ${runsPerCar} run${runsPerCar === 1 ? '' : 's'} per car — consider bumping it up.` : ''}
+                </div>
+              )}
             </div>
 
             <div style={{ ...S.summary, ...(isMobile ? { padding: '10px 8px', gap: 6 } : {}) }}>
