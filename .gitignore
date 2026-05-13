@@ -155,3 +155,6 @@ vite.config.ts.timestamp-*
 .vscode/
 *.swp
 *.swo
+
+# Local database backups (created by `firebase database:get`)
+backups/

@@ -66,8 +66,12 @@ export default function LandingPage() {
         padding: '60px 20px 40px', textAlign: 'center',
       }}>
         <div style={{ fontSize: 64, marginBottom: 8 }}>🏎️</div>
-        <h1 style={{ fontSize: 42, margin: '0 0 8px', color: '#ffd700', letterSpacing: 2 }}>
-          PINEWOOD DERBY
+        <h1 style={{
+          fontSize: 'clamp(24px, 6vw, 42px)',
+          margin: '0 0 8px', color: '#ffd700', letterSpacing: 2,
+          lineHeight: 1.1,
+        }}>
+          PINEWOOD DERBY / BEAVER BUGGIES
         </h1>
         <p style={{ fontSize: 18, marginBottom: 32, opacity: 0.75 }}>
           Fair heats. Live scoring. Multi-device sync.
