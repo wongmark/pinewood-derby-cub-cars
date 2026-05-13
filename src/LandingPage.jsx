@@ -165,12 +165,46 @@ export default function LandingPage() {
           ))}
         </div>
 
-        <p style={{
-          textAlign: 'center', marginTop: 32, fontSize: 12,
-          color: '#c9b78a', opacity: 0.6, letterSpacing: '0.05em',
+        <div style={{
+          textAlign: 'center', marginTop: 40, paddingTop: 28,
+          borderTop: '1px solid rgba(255,215,0,0.18)',
         }}>
-          No accounts. No tracking. Just a clean race night.
-        </p>
+          <p style={{
+            fontSize: 13, color: '#d6c89a', lineHeight: 1.6,
+            maxWidth: 540, margin: '0 auto 12px',
+          }}>
+            Open source and free forever. Remix it for your pack, troop, colony, or unit.
+          </p>
+          <p style={{ fontSize: 13, margin: '0 0 12px' }}>
+            <a
+              href="https://github.com/wongmark/pinewood-derby-cub-cars"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                color: '#ffd700', fontWeight: 700, textDecoration: 'underline',
+                textDecorationStyle: 'dotted', textUnderlineOffset: 3,
+                letterSpacing: '0.02em',
+              }}
+            >
+              View source on GitHub →
+            </a>
+          </p>
+          <p style={{
+            fontSize: 11, color: '#c9b78a', opacity: 0.6,
+            letterSpacing: '0.05em', margin: 0,
+          }}>
+            Licensed under{' '}
+            <a
+              href="https://www.gnu.org/licenses/agpl-3.0.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: '#c9b78a', textDecoration: 'underline' }}
+            >
+              AGPL-3.0-or-later
+            </a>
+            {' '}· No accounts · No tracking · Just a clean race night
+          </p>
+        </div>
       </section>
     </div>
   )

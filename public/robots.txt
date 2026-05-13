@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /r/
+
+# Race pages (/r/{uuid}) are private per-pack URLs and should not be indexed.
+# The landing page at / is the public, indexable entry point.
+
+Sitemap: https://derby.987.ca/sitemap.xml

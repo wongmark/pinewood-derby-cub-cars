@@ -3,13 +3,162 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Pinewood Derby</title>
+
+    <!-- Primary SEO -->
+    <title>Pinewood Derby & Beaver Buggies Race App — Free, Live, Multi-Device | derby.987.ca</title>
+    <meta name="description" content="Free open-source pinewood derby app for Cub Scouts, Beavers, Girl Guides, AWANA & 4-H. Generates lane-fair heats, syncs results live across phones, exports to Excel. No signup. Also runs Beaver Buggies, Kub Kar Rally, and powderpuff derby races." />
+    <meta name="keywords" content="pinewood derby app, pinewood derby software, pinewood derby scheduler, pinewood derby scoring, beaver buggies, kub kar rally, cub kar rally, cub scout pinewood derby, scouts canada derby, awana grand prix, powderpuff derby, girl guide derby, free pinewood derby software, open source pinewood derby, derby heat scheduler, derby lane fairness, lane assignment, derby live scoring, mobile pinewood derby" />
+    <meta name="author" content="Mark Wong" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <link rel="canonical" href="https://derby.987.ca/" />
+
+    <!-- Open Graph (Facebook, LinkedIn, group-chat link previews) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://derby.987.ca/" />
+    <meta property="og:title" content="Pinewood Derby & Beaver Buggies Race App — Free & Live" />
+    <meta property="og:description" content="Run your pack's pinewood derby or beaver buggies night from any phone. Fair lane assignments, live scoring synced across every device, results exported to Excel. Free and open source." />
+    <meta property="og:site_name" content="Pinewood Derby Race App" />
+    <meta property="og:locale" content="en_CA" />
+
+    <!-- Twitter / X -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Pinewood Derby & Beaver Buggies Race App" />
+    <meta name="twitter:description" content="Free, live, multi-device pinewood derby scheduler & scorekeeper for scout packs, beaver colonies, guide units, and AWANA clubs." />
+
+    <!-- Theme color for mobile browsers -->
+    <meta name="theme-color" content="#1a2744" />
+    <meta name="apple-mobile-web-app-title" content="Derby" />
+
+    <!-- Structured data: WebApplication schema for rich Google results -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Pinewood Derby & Beaver Buggies Race App",
+      "alternateName": ["Beaver Buggies Race App", "Pinewood Derby Scheduler", "Kub Kar Rally Tracker"],
+      "url": "https://derby.987.ca/",
+      "applicationCategory": "SportsApplication",
+      "operatingSystem": "Any (web browser)",
+      "browserRequirements": "Requires JavaScript and a modern browser. Works on iPhone, iPad, Android, Mac, Windows, Chromebook.",
+      "description": "Free open-source web app for running pinewood derby races, beaver buggies, kub kar rallies, and similar gravity-car race nights for Cub Scouts, Scouts, Beavers, Girl Guides, AWANA, and 4-H. Generates lane-fair heat schedules, syncs scoring live across every connected phone or tablet, and exports the race to Excel.",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "license": "https://www.gnu.org/licenses/agpl-3.0.html",
+      "isAccessibleForFree": true,
+      "audience": {
+        "@type": "Audience",
+        "audienceType": "Cub Scouts, Scouts, Beavers, Girl Guides, AWANA, 4-H, school groups, parents"
+      },
+      "featureList": [
+        "Lane-fair heat schedule generation",
+        "Live multi-device scoring sync",
+        "Parents follow along on phones via shared race URL",
+        "Configurable runs per car (Quick / Balanced / High / Tournament)",
+        "Passcode-protected scorekeeper handoff",
+        "Audit trail showing who recorded each result",
+        "Tie-aware finishing places",
+        "Excel (.xlsx) export of schedule, results, standings, lane fairness",
+        "Mobile responsive — works on phones at the start line",
+        "QR code share for the race URL",
+        "No signup, no tracking, no ads"
+      ],
+      "potentialAction": {
+        "@type": "UseAction",
+        "target": "https://derby.987.ca/"
+      },
+      "sameAs": [
+        "https://github.com/wongmark/pinewood-derby-cub-cars"
+      ]
+    }
+    </script>
+
+    <!-- Structured data: FAQ for "How do I run a pinewood derby?" rich snippets -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Is this pinewood derby app free?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Free forever for any troop, pack, unit, colony, or guide group. No signup, no credit card, no ads. The source code is open-source under the AGPL-3.0-or-later license."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does it work for Beaver Buggies and Kub Kar Rally races?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. The app is generic enough to run any heat-based gravity-car race: Pinewood Derby (BSA), Beaver Buggies and Kub Kar Rally (Scouts Canada), AWANA Grand Prix, Powderpuff Derby (Girl Scouts USA), and similar events for Girl Guides, Brownies, Sparks, and 4-H. You can rename the race at the top to whatever your pack calls it."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does the multi-device scoring work?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Every race gets its own private URL. Share the link in your parents' group chat. Anyone who opens it sees the heats and standings update live as the scorekeeper records each lane. The scorekeeper role can be passed between phones, with an optional passcode for trusted helpers."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What about timing systems like FastTrack or NewBold?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "This app is built for races scored by hand — by far the most common setup for cub pack and beaver colony derby nights. Electronic timing integration is on the wishlist for future versions."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is my race data private?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Race data lives in Firebase Realtime Database under a private 36-character UUID URL — like an unlisted Google Doc. Only people you share the URL with can see the race. There is no account system, no tracking, and no ads."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I export the race results?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Click the Export .xlsx button from the Heats, Cars, or Standings tab (visible to scorekeepers). The file includes the heat schedule, lane assignments, final standings with points and place tallies, and a lane-fairness audit sheet."
+          }
+        }
+      ]
+    }
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
   </head>
   <body>
-    <div id="root"></div>
+    <!--
+      Static SEO content for crawlers. JavaScript replaces this with the React app.
+      Search engines that don't execute JS still see meaningful text.
+    -->
+    <div id="root">
+      <h1>Pinewood Derby & Beaver Buggies Race App</h1>
+      <p>
+        A free, open-source web app for running pinewood derby races, beaver buggies rallies,
+        kub kar rally events, and similar heat-based gravity-car race nights for
+        Cub Scouts, Scouts, Beavers, Boy Scouts, Girl Guides, Brownies, Sparks, AWANA, and 4-H.
+      </p>
+      <p>
+        Generates a lane-fair heat schedule, syncs scoring live across every connected phone
+        and tablet via Firebase, and exports the full race to Excel when you're done. No signup,
+        no installs, no fees. Loading the live app&hellip;
+      </p>
+      <p>
+        If your browser does not load the app automatically, the source code is available at
+        <a href="https://github.com/wongmark/pinewood-derby-cub-cars">github.com/wongmark/pinewood-derby-cub-cars</a>.
+      </p>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
