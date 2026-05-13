@@ -306,7 +306,12 @@ export default function StatsPage() {
 
         {error && (
           <div style={{ background: 'rgba(168,50,42,0.15)', border: `1px solid ${C.red}`, padding: 16, borderRadius: 4, color: C.red, marginBottom: 24 }}>
-            Failed to load: {error}
+            <div style={{ fontWeight: 700, marginBottom: 6 }}>Failed to load: {error}</div>
+            {/permission|denied/i.test(error) && (
+              <div style={{ fontSize: 13, color: C.parchment, opacity: 0.85, lineHeight: 1.5 }}>
+                Heads up: the production Firebase rules block listing all races for privacy. To bring this page back, build a Cloud Function that maintains an /aggregates/stats summary node and read from that here. Until then, check usage via the Firebase console's Data tab.
+              </div>
+            )}
           </div>
         )}
 

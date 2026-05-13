@@ -1,0 +1,72 @@
+{
+  "rules": {
+    "races": {
+      ".read": false,
+      ".write": false,
+
+      "$raceId": {
+        ".read": "$raceId.length === 36",
+        ".write": "$raceId.length === 36",
+
+        "meta": {
+          ".validate": "newData.hasChildren(['created'])",
+          "created":             { ".validate": "newData.isNumber()" },
+          "phase":               { ".validate": "newData.isString() && newData.val().length <= 16" },
+          "raceName":            { ".validate": "newData.isString() && newData.val().length <= 80" },
+          "numLanes":            { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 8" },
+          "numCars":             { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 200" },
+          "runsPerCar":          { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 20" },
+          "scorekeeper":         { ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 60)" },
+          "everHadScorekeeper":  { ".validate": "newData.isBoolean()" },
+          "requirePasscode":     { ".validate": "newData.isBoolean()" },
+          "passcode":            { ".validate": "newData.isString() && newData.val().length <= 60" },
+          "$other":              { ".validate": false }
+        },
+
+        "cars": {
+          "$carId": {
+            ".validate": "$carId.length <= 64",
+            "id":     { ".validate": "newData.isString() && newData.val().length <= 64" },
+            "name":   { ".validate": "newData.isString() && newData.val().length <= 60" },
+            "order":  { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000" },
+            "$other": { ".validate": false }
+          }
+        },
+
+        "schedule": {
+          ".validate": "newData.hasChildren() || !newData.exists()",
+          "$heatIdx": {
+            "$slot": {
+              "carId": { ".validate": "newData.isString() && newData.val().length <= 64" },
+              "lane":  { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 7" },
+              "$other": { ".validate": false }
+            }
+          }
+        },
+
+        "results": {
+          "$heatIdx": {
+            "$key": {
+              ".validate": "(newData.isNumber() && newData.val() >= 1 && newData.val() <= 8) || (newData.isString() && (newData.val() === 'DNF' || $key === '_by' || $key === '_at')) || newData.isNumber()"
+            }
+          }
+        },
+
+        "scorekeepers": {
+          "$name": {
+            ".validate": "$name.length <= 60",
+            "claimedAt": { ".validate": "newData.isNumber()" },
+            "$other":    { ".validate": false }
+          }
+        },
+
+        "$other": { ".validate": false }
+      }
+    },
+
+    "$other": {
+      ".read": false,
+      ".write": false
+    }
+  }
+}
