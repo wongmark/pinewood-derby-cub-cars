@@ -851,13 +851,7 @@ export default function DerbyApp() {
       setRenameMeError('That name is already in use for this race. Pick a different name.')
       return
     }
-    const prev = scorekeeperName
-    if (allowMulti) {
-      set(ref(db, `${dbPath}/scorekeepers/${prev}`), null)
-      set(ref(db, `${dbPath}/scorekeepers/${next}`), { claimedAt: Date.now() })
-    } else {
-      setMeta({ scorekeeper: next })
-    }
+    setMeta({ scorekeeper: next })
     setScorekeeperName(next)
     localStorage.setItem(lsKey, next)
     setRenameMe(false)
@@ -910,7 +904,6 @@ export default function DerbyApp() {
   const cars = Object.values(fbData?.cars || {}).sort((a, b) => a.order - b.order)
   const schedule = fbData?.schedule || []
   const results = fbData?.results || {}
-  const scorekeepers = fbData?.scorekeepers || {}  // {name: {claimedAt}} for multi-mode
   const defaultRaceName = `Derby · ${new Date(meta.created || Date.now()).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`
   const raceName = (meta.raceName && meta.raceName.trim()) || defaultRaceName
   const numLanes = meta.numLanes || 4
@@ -920,20 +913,13 @@ export default function DerbyApp() {
   const ended = phase === 'ended'
   const requirePasscode = !!meta.requirePasscode
   const passcode = meta.passcode || ''
-  const allowMulti = false  // single-scorekeeper mode only
-  const singleScorekeeper = meta.scorekeeper || null  // single-mode current
+  const singleScorekeeper = meta.scorekeeper || null
 
   // Bootstrap: free first claim if nobody has ever been a scorekeeper.
   // `meta.everHadScorekeeper` is a persistent flag so stepping down doesn't make the race look brand-new.
-  const hasEverHadScorekeeper = !!meta.everHadScorekeeper
-    || !!singleScorekeeper
-    || Object.keys(scorekeepers).length > 0
+  const hasEverHadScorekeeper = !!meta.everHadScorekeeper || !!singleScorekeeper
 
-  const iAmScorekeeper = !ended && (
-    allowMulti
-      ? !!(scorekeeperName && scorekeepers[scorekeeperName])
-      : !!(scorekeeperName && singleScorekeeper === scorekeeperName)
-  )
+  const iAmScorekeeper = !ended && !!scorekeeperName && singleScorekeeper === scorekeeperName
   const canEdit = iAmScorekeeper
 
   function setMeta(patch) { update(ref(db, `${dbPath}/meta`), patch) }
@@ -1007,11 +993,7 @@ export default function DerbyApp() {
   // Includes the current scorekeeper(s) and anyone who has ever stamped a result.
   function takenScorekeeperNames(excludeSelf = false) {
     const names = new Set()
-    if (allowMulti) {
-      Object.keys(scorekeepers).forEach(n => names.add(n.toLowerCase()))
-    } else if (singleScorekeeper) {
-      names.add(singleScorekeeper.toLowerCase())
-    }
+    if (singleScorekeeper) names.add(singleScorekeeper.toLowerCase())
     Object.values(results).forEach(r => {
       if (r && r._by) names.add(String(r._by).toLowerCase())
     })
@@ -1036,37 +1018,18 @@ export default function DerbyApp() {
         return
       }
     }
-    if (allowMulti) {
-      set(ref(db, `${dbPath}/scorekeepers/${name}`), { claimedAt: Date.now() })
-      setMeta({ everHadScorekeeper: true })
-    } else {
-      setMeta({ scorekeeper: name, everHadScorekeeper: true })
-    }
+    setMeta({ scorekeeper: name, everHadScorekeeper: true })
     setScorekeeperName(name)
     localStorage.setItem(lsKey, name)
     setClaimModal(false)
   }
 
-  // Returns true when stepping down would leave the race with no scorekeeper.
-  function wouldLeaveRaceUnattended() {
-    if (allowMulti) return Object.keys(scorekeepers).length <= 1
-    return !!singleScorekeeper && singleScorekeeper === scorekeeperName
-  }
-
   function stepDown() {
-    if (wouldLeaveRaceUnattended()) {
-      setStepDownConfirm(true)
-      return
-    }
-    doStepDown()
+    setStepDownConfirm(true)
   }
 
   function doStepDown() {
-    if (allowMulti) {
-      set(ref(db, `${dbPath}/scorekeepers/${scorekeeperName}`), null)
-    } else {
-      setMeta({ scorekeeper: null })
-    }
+    setMeta({ scorekeeper: null })
     // Keep `scorekeeperName` in state + localStorage so we can pre-fill the
     // claim modal if they decide to come back. `iAmScorekeeper` already gates
     // edit access against the live Firebase slot, so retaining the name here
@@ -1371,15 +1334,26 @@ export default function DerbyApp() {
           <div style={S.modalDialog} onClick={e => e.stopPropagation()}>
             <div style={S.modalTitle}>Become a viewer?</div>
             <div style={{ fontSize: 14, color: C.ink, lineHeight: 1.5, marginBottom: 20 }}>
-              You're the only scorekeeper right now. If you step down, nobody will be able to record results until someone else becomes a scorekeeper.
-              <div style={{ marginTop: 12, padding: 12, background: 'rgba(168,50,42,0.08)', border: `1px solid ${C.red}`, borderRadius: 2 }}>
-                <strong style={{ color: C.red }}>⚠ You could get locked out.</strong>
-                <div style={{ marginTop: 4, color: C.inkDim }}>
-                  {requirePasscode
-                    ? `Anyone who wants to claim the role will need the passcode (“${passcode || '—'}”). Make sure you (or another helper) still know it before stepping down.`
-                    : 'Anyone with the race link can claim the role, but only the current scorekeeper can change settings. If you step down and need to take it back, just click "Become a Scorekeeper" again.'}
-                </div>
-              </div>
+              {requirePasscode ? (
+                <>
+                  After you step down, anyone who wants to record results will need the passcode to claim the scorekeeper role.
+                  <div style={{ marginTop: 12, padding: 12, background: 'rgba(253,185,19,0.12)', border: `1px solid ${C.gold}`, borderRadius: 2 }}>
+                    <div style={{ fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: C.inkDim, fontWeight: 700, marginBottom: 4 }}>
+                      Race passcode
+                    </div>
+                    <div style={{ fontSize: 18, fontFamily: '"JetBrains Mono", ui-monospace, monospace', fontWeight: 700, color: C.navy }}>
+                      {passcode || '—'}
+                    </div>
+                    <div style={{ marginTop: 8, fontSize: 12, color: C.inkDim, lineHeight: 1.4 }}>
+                      Make sure another helper still knows this, or that you can re-enter it yourself, before stepping down.
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  Anyone with the race link can claim the scorekeeper role. You can take it back any time by clicking "Become a Scorekeeper" again.
+                </>
+              )}
             </div>
             <div style={S.modalActions}>
               <button style={S.modalCancelBtn} onClick={() => setStepDownConfirm(false)}>
