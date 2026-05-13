@@ -1062,37 +1062,18 @@ export default function DerbyApp() {
       lanesObj[lane] = pos
     }
 
-    // If this DNF reduced the active field, compress any now-out-of-range
-    // place values down so the place set stays {1..activeRacers}. Without
-    // this, a stored place of "4" in a 3-active heat would render as no
-    // selected button and score 0 points.
+    // If this DNF reduced the active field, any place value greater than
+    // the new active-racer count is now invalid (e.g. a stored "4" when
+    // only 3 cars are still racing). Clear those rather than guessing
+    // where they should go — the scorekeeper retaps the right place.
     const heat = schedule[heatIdx]
     if (becomingDnf && heat) {
       const dnfCount = Object.values(lanesObj).filter(v => v === 'DNF').length
       const activeRacers = heat.length - dnfCount
-      // Repeatedly find the smallest place > activeRacers and pull it down
-      // into the first vacant slot ≤ activeRacers. Loop until clean.
-      let safety = heat.length + 1
-      while (safety-- > 0) {
-        const numericEntries = Object.entries(lanesObj)
-          .filter(([, v]) => typeof v === 'number')
-        const overflow = numericEntries
-          .filter(([, v]) => v > activeRacers)
-          .sort((a, b) => a[1] - b[1])
-        if (overflow.length === 0) break
-        const usedPlaces = new Set(numericEntries.map(([, v]) => v))
-        let target = 0
-        for (let p = 1; p <= activeRacers; p++) {
-          if (!usedPlaces.has(p)) { target = p; break }
-        }
-        if (target === 0) {
-          // No room — bump the first overflow down to activeRacers
-          // (the next pass will continue collapsing).
-          target = activeRacers
-        }
-        const [overflowLane] = overflow[0]
-        lanesObj[overflowLane] = target
-      }
+      Object.keys(lanesObj).forEach(l => {
+        const v = lanesObj[l]
+        if (typeof v === 'number' && v > activeRacers) delete lanesObj[l]
+      })
     }
 
     set(ref(db, `${dbPath}/results/${heatIdx}`), {
