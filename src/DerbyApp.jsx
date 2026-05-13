@@ -1039,20 +1039,62 @@ export default function DerbyApp() {
   function setResult(heatIdx, lane, pos) {
     if (!canEdit) return
     const cur = results[heatIdx] || {}
-    const updated = { ...cur }
-    // Preserve audit fields when rebuilding the lane map.
+    // Strip audit fields; we'll rewrite them.
     const lanesObj = {}
-    Object.keys(updated).forEach(l => {
-      if (!isNaN(parseInt(l))) lanesObj[l] = updated[l]
+    Object.keys(cur).forEach(l => {
+      if (!isNaN(parseInt(l))) lanesObj[l] = cur[l]
     })
+
+    const wasDnf = lanesObj[lane] === 'DNF'
+    const becomingDnf = pos === 'DNF' && !wasDnf
+
     if (lanesObj[lane] === pos) {
+      // Tapping the same value again clears it (toggle off).
       delete lanesObj[lane]
     } else {
-      Object.keys(lanesObj).forEach(l => {
-        if (lanesObj[l] === pos && parseInt(l) !== lane) delete lanesObj[l]
-      })
+      // Setting a numeric place: clear any other lane that had this place
+      // (places are unique within a heat).
+      if (typeof pos === 'number') {
+        Object.keys(lanesObj).forEach(l => {
+          if (lanesObj[l] === pos && parseInt(l) !== lane) delete lanesObj[l]
+        })
+      }
       lanesObj[lane] = pos
     }
+
+    // If this DNF reduced the active field, compress any now-out-of-range
+    // place values down so the place set stays {1..activeRacers}. Without
+    // this, a stored place of "4" in a 3-active heat would render as no
+    // selected button and score 0 points.
+    const heat = schedule[heatIdx]
+    if (becomingDnf && heat) {
+      const dnfCount = Object.values(lanesObj).filter(v => v === 'DNF').length
+      const activeRacers = heat.length - dnfCount
+      // Repeatedly find the smallest place > activeRacers and pull it down
+      // into the first vacant slot ≤ activeRacers. Loop until clean.
+      let safety = heat.length + 1
+      while (safety-- > 0) {
+        const numericEntries = Object.entries(lanesObj)
+          .filter(([, v]) => typeof v === 'number')
+        const overflow = numericEntries
+          .filter(([, v]) => v > activeRacers)
+          .sort((a, b) => a[1] - b[1])
+        if (overflow.length === 0) break
+        const usedPlaces = new Set(numericEntries.map(([, v]) => v))
+        let target = 0
+        for (let p = 1; p <= activeRacers; p++) {
+          if (!usedPlaces.has(p)) { target = p; break }
+        }
+        if (target === 0) {
+          // No room — bump the first overflow down to activeRacers
+          // (the next pass will continue collapsing).
+          target = activeRacers
+        }
+        const [overflowLane] = overflow[0]
+        lanesObj[overflowLane] = target
+      }
+    }
+
     set(ref(db, `${dbPath}/results/${heatIdx}`), {
       ...lanesObj,
       _by: scorekeeperName,
